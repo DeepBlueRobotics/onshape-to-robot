@@ -62,6 +62,7 @@ def addPart(occurrence, matrix):
 
     # Importing STL file for this part
     justPart, prefix = extractPartName(part['name'], part['configuration'])
+    prefix = prefix.replace('"', '_')
 
     extra = ''
     if occurrence['instance']['configuration'] != 'default':

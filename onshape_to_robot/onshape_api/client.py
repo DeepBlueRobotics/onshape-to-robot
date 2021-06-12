@@ -125,10 +125,12 @@ class Client():
             result = f.read()
             f.close()
         else:
-            result = callback().content
-            f = open(fileName, 'wb')
-            f.write(result)
-            f.close()
+            try:
+                f = open(fileName, 'wb')
+                f.write(result)
+                f.close()
+            except Exception as e:
+                print(e)
         if isString and type(result) == bytes:
             result = result.decode('utf-8')
         return result

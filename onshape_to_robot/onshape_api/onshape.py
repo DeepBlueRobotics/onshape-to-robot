@@ -225,7 +225,8 @@ class Onshape():
             print('! ERROR ('+str(res.status_code)+') while using OnShape API')
             if res.text:
                 print('! '+res.text)
-            exit()
+            #exit()
+            return None
             if self._logging:
                 utils.log('request failed, details: ' + res.text, level=1)
         else:

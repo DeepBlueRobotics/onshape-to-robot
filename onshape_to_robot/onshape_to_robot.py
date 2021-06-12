@@ -88,16 +88,19 @@ def addPart(occurrence, matrix):
             shortend_configuration = part['configuration']
         stl = client.part_studio_stl_m(part['documentId'], part['documentMicroversion'], part['elementId'],
                                        part['partId'], shortend_configuration)
-        f = open(config['outputDirectory']+'/'+stlFile, 'wb')
-        f.write(stl)
-        f.close()
+        if stl == None:
+            stlFile = None
+        else:
+            f = open(config['outputDirectory']+'/'+stlFile, 'wb')
+            f.write(stl)
+            f.close()
 
-        stlMetadata = prefix.replace('/', '_')+'.part'
-        f = open(config['outputDirectory']+'/'+stlMetadata, 'wb')
-        f.write(json.dumps(part).encode('UTF-8'))
-        f.close()
+            stlMetadata = prefix.replace('/', '_')+'.part'
+            f = open(config['outputDirectory']+'/'+stlMetadata, 'wb')
+            f.write(json.dumps(part).encode('UTF-8'))
+            f.close()
 
-        stlFile = config['outputDirectory']+'/'+stlFile
+            stlFile = config['outputDirectory']+'/'+stlFile
 
     # Import the SCAD files pure shapes
     shapes = None
@@ -113,7 +116,7 @@ def addPart(occurrence, matrix):
     else:
         metadata = client.part_get_metadata(
             part['documentId'], part['documentMicroversion'], part['elementId'], part['partId'], part['configuration'])
-        if 'appearance' in metadata:
+        if metadata != None and 'appearance' in metadata:
             colors = metadata['appearance']['color']
             color = np.array(
                 [colors['red'], colors['green'], colors['blue']])/255.0
@@ -135,11 +138,13 @@ def addPart(occurrence, matrix):
             massProperties = client.part_mass_properties(
                 part['documentId'], part['documentMicroversion'], part['elementId'], part['partId'], part['configuration'])
 
-            if part['partId'] not in massProperties['bodies']:
+            if massProperties == None or part['partId'] not in massProperties['bodies']:
                 print(Fore.YELLOW + 'WARNING: part ' +
                       part['name']+' has no dynamics (maybe it is a surface)' + Style.RESET_ALL)
                 return
             massProperties = massProperties['bodies'][part['partId']]
+            if 'mass' not in massProperties:
+                print(massProperties)
             mass = massProperties['mass'][0]
             com = massProperties['centroid']
             inertia = massProperties['inertia']

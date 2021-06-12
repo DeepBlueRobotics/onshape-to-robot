@@ -125,6 +125,10 @@ class Client():
             result = f.read()
             f.close()
         else:
+            cbr = callback()
+            if cbr == None:
+                return None
+            result = cbr.content
             try:
                 f = open(fileName, 'wb')
                 f.write(result)
@@ -134,7 +138,7 @@ class Client():
         if isString and type(result) == bytes:
             result = result.decode('utf-8')
         return result
-            
+
 
     def list_documents(self):
         '''
@@ -298,7 +302,7 @@ class Client():
         for entry in before:
             if entry['partId'] == partid:
                 name = entry['name']
-        
+
         if name is not None:
             after = self.get_parts(did, mid, eid, configuration)
             for entry in after:
@@ -326,7 +330,7 @@ class Client():
 
             if partIdChanged:
                 partid = self.find_new_partid(did, mid, eid, partid, configuration_before, configuration)
-    
+
         def invoke():
             req_headers = {
                 'Accept': 'application/vnd.onshape.v1+octet-stream'
@@ -339,10 +343,15 @@ class Client():
         def invoke():
             return self._api.request('get', '/api/parts/d/' + did + '/m/' + mid + '/e/' + eid + '/partid/'+double_escape_slash(partid)+'/metadata', query={'configuration': configuration})
 
-        return json.loads(self.cache_get('metadata', (did, mid, eid, self.hash_partid(partid), configuration), invoke, True))
+        data = self.cache_get('metadata', (did, mid, eid, self.hash_partid(partid), configuration), invoke, True)
+        if data == None:
+            return None
+        return json.loads(data)
 
     def part_mass_properties(self, did, mid, eid, partid, configuration = 'default'):
         def invoke():
             return self._api.request('get', '/api/parts/d/' + did + '/m/' + mid + '/e/' + eid + '/partid/'+escape_slash(partid)+'/massproperties', query={'configuration': configuration})
-
-        return json.loads(self.cache_get('massproperties', (did, mid, eid, self.hash_partid(partid), configuration), invoke, True))
+        data = self.cache_get('massproperties', (did, mid, eid, self.hash_partid(partid), configuration), invoke, True)
+        if data == None:
+            return None
+        return json.loads(data)

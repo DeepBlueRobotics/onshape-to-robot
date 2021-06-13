@@ -9,6 +9,7 @@ import os
 import hashlib
 from . import csg
 from .robot_description import RobotURDF, RobotSDF
+import re
 
 # Loading configuration, collecting occurrences and building robot tree
 from .load_robot import \
@@ -62,7 +63,7 @@ def addPart(occurrence, matrix):
 
     # Importing STL file for this part
     justPart, prefix = extractPartName(part['name'], part['configuration'])
-    prefix = prefix.replace('"', '_')
+    prefix = re.sub(r'[^\/0-9a-zA-Z_-]', '_', prefix)
 
     extra = ''
     if occurrence['instance']['configuration'] != 'default':

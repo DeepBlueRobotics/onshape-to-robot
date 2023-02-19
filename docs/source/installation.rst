@@ -43,8 +43,17 @@ Install the dependencies (can be in your python3 virtualenv):
 
     pip install numpy pybullet requests commentjson colorama numpy-stl
 
-You can know use the scripts that are in the root folder of repository (feel free to add it to your
-``$PATH`` and ``$PYTHONPATH`` to run it from anywhere)
+You can now use the scripts by running a command like the following in the root folder:
+
+.. code-block:: bash
+
+    python3 -m onshape_to_robot.<script name without extension> <script arguments>
+
+For example:
+
+.. code-block:: bash
+
+    python3 -m onshape_to_robot.onshape_to_robot /path/to/my/robot/folder
 
 .. _api-key:
 

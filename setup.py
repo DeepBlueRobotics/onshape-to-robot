@@ -1,11 +1,11 @@
 import setuptools
 
-with open("README-pypi.md", "r") as fh:
-    long_description = fh.read()
+with open("README-pypi.md", "r", encoding="utf-8") as stream:
+    long_description = stream.read()
 
 setuptools.setup(
     name="onshape-to-robot",
-    version="0.3.12",
+    version="0.3.18",
     author="Rhoban team",
     author_email="team@rhoban.com",
     description="Converting OnShape assembly to robot definition (SDF or URDF) through OnShape API ",
@@ -13,8 +13,15 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/rhoban/onshape-to-robot/",
     packages=setuptools.find_packages(),
-    scripts=['onshape-to-robot', 'onshape-to-robot-bullet', 
-    'onshape-to-robot-edit-shape', 'onshape-to-robot-clear-cache', 'onshape-to-robot-pure-sketch'],
+    entry_points={
+        "console_scripts": [
+            "onshape-to-robot=onshape_to_robot:onshape_to_robot.main",
+            "onshape-to-robot-bullet=onshape_to_robot:bullet.main",
+            "onshape-to-robot-clear-cache=onshape_to_robot:clear_cache.main",
+            "onshape-to-robot-edit-shape=onshape_to_robot:edit_shape.main",
+            "onshape-to-robot-pure-sketch=onshape_to_robot:pure_sketch.main",
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

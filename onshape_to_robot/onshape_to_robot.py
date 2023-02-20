@@ -150,10 +150,14 @@ def main():
                     return
                 massProperties = massProperties['bodies'][part['partId']]
                 if 'mass' not in massProperties:
-                    print(massProperties)
-                mass = massProperties['mass'][0]
-                com = massProperties['centroid']
-                inertia = massProperties['inertia']
+                    # The part of type Surface has no mass properties.
+                    mass = 0
+                    com = [0] * 3
+                    inertia = [0] * 9
+                else:
+                    mass = massProperties["mass"][0]
+                    com = massProperties["centroid"]
+                    inertia = massProperties["inertia"]
 
                 if abs(mass) < 1e-9:
                     print(Fore.YELLOW + 'WARNING: part ' +

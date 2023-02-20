@@ -1,3 +1,4 @@
+from collections import defaultdict
 import math
 from sys import exit
 import numpy as np
@@ -111,7 +112,7 @@ assignations = {}
 
 # Frames (mated with frame_ name) will be special links in the output file allowing to track some specific
 # manually identified frames
-frames = {}
+frames = defaultdict(list)
 
 
 def assignParts(root, parent):
@@ -200,6 +201,7 @@ for feature in features:
                 if limits is not None:
                     limits = (-limits[1], -limits[0])
 
+
                 # Flipping the joint around X axis
                 flip = np.array([[1, 0, 0, 0],
                                 [0, -1, 0, 0],
@@ -247,10 +249,6 @@ for feature in features:
 
             assignParts(child, child)
             assignParts(parent, parent)
-            if child not in frames:
-                frames[child] = []
-            if parent not in frames:
-                frames[parent] = []
 
 print(Fore.GREEN + Style.BRIGHT + '* Found total ' +
       str(len(relations))+' DOFs' + Style.RESET_ALL)

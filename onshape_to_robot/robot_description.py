@@ -123,9 +123,9 @@ class RobotDescription(object):
         stl_combine.apply_matrix(m, matrix)
 
         if self._mesh[node] is None:
-            self._mesh[node] = m
+            self._mesh[node] = [m.data]
         else:
-            self._mesh[node] = stl_combine.combine_meshes(self._mesh[node], m)
+            self._mesh[node].append(m.data)
 
     def linkDynamics(self):
         mass = 0
@@ -215,8 +215,9 @@ class RobotURDF(RobotDescription):
                     color = [0.5, 0.5, 0.5]
 
                 filename = self._link_name+'_'+node+'.stl'
+                mesh = stl_combine.combine_meshes(self._mesh[node])
                 stl_combine.save_mesh(
-                    self._mesh[node], self.meshDir+'/'+filename)
+                    mesh, self.meshDir+'/'+filename)
                 if self.shouldSimplifySTLs(node):
                     stl_combine.simplify_stl(self.meshDir+'/'+filename, self.maxSTLSize)
                 self.addSTL(np.identity(4), filename, color, self._link_name, node)
@@ -385,8 +386,9 @@ class RobotSDF(RobotDescription):
             if self._mesh[node] is not None:
                 color = self._color / self._color_mass
                 filename = self._link_name+'_'+node+'.stl'
+                mesh = stl_combine.combine_meshes(self._mesh[node])
                 stl_combine.save_mesh(
-                    self._mesh[node], self.meshDir+'/'+filename)
+                    mesh, self.meshDir+'/'+filename)
                 if self.shouldSimplifySTLs(node):
                     stl_combine.simplify_stl(
                         self.meshDir+'/'+filename, self.maxSTLSize)

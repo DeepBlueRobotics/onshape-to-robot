@@ -16,8 +16,9 @@ def save_mesh(mesh, stl_file):
     mesh.save(stl_file, mode=stl.Mode.BINARY)
 
 
-def combine_meshes(m1, m2):
-    return mesh.Mesh(np.concatenate([m1.data, m2.data]))
+def combine_meshes(meshData):
+
+    return mesh.Mesh(np.concatenate(meshData))
 
 
 def apply_matrix(mesh, matrix):

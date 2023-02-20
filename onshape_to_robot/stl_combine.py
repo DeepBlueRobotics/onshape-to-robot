@@ -67,21 +67,13 @@ def create_tmp_filter_file(filename='filter_file_tmp.mlx', reduction=0.9):
 
 
 def reduce_faces(in_file, out_file, reduction=0.5):
+    import pymeshlab
     filter_script_path = create_tmp_filter_file(reduction=reduction)
-    # Add input mesh
-    command = "meshlabserver -i " + in_file
-    # Add the filter script
-    command += " -s " + filter_script_path
-    # Add the output filename and output flags
-    command += " -o " + out_file + " -om vn fn"
-    command += " > /tmp/meshlab.log 2>&1"
-    # Execute command
-    # print("Going to execute: " + command)
-    output = subprocess.check_output(command, shell=True)
-    # last_line = output.splitlines()[-1]
-    # print("Done:")
-    #print(in_file + " > " + out_file + ": " + last_line)
-
+    ms = pymeshlab.MeshSet()
+    ms.load_new_mesh(in_file)
+    ms.load_filter_script(filter_script_path)
+    ms.apply_filter_script()
+    ms.save_current_mesh(out_file)
 
 def simplify_stl(stl_file, max_size=3):
     size_M = os.path.getsize(stl_file)/(1024*1024)

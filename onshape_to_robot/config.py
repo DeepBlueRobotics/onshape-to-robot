@@ -3,6 +3,7 @@ import sys
 import os
 import commentjson as json
 from colorama import Fore, Back, Style
+import importlib.util
 
 config = {}
 
@@ -134,10 +135,10 @@ if config['useScads']:
 # Checking that MeshLab is present
 if config['simplifySTLs']:
     print(Style.BRIGHT + '* Checking MeshLab presence...' + Style.RESET_ALL)
-    if not os.path.exists('/usr/bin/meshlabserver') != 0:
-        print(Fore.RED + "No /usr/bin/meshlabserver, disabling STL simplification support" + Style.RESET_ALL)
-        print(Fore.BLUE + "TIP: consider installing meshlab:" + Style.RESET_ALL)
-        print(Fore.BLUE + "sudo apt-get install meshlab" + Style.RESET_ALL)
+    if importlib.util.find_spec('pymeshlab') is None:
+        print(Fore.RED + "PyMeshLab is not installed, disabling STL simplification support" + Style.RESET_ALL)
+        print(Fore.BLUE + "TIP: consider installing PyMeshLab:" + Style.RESET_ALL)
+        print(Fore.BLUE + "pip install pymeshlab" + Style.RESET_ALL)
         config['simplifySTLs'] = False
 
 # Checking that versionId and workspaceId are not set on same time

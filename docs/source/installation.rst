@@ -41,7 +41,7 @@ Install the dependencies (can be in your python3 virtualenv):
 
 .. code-block:: bash
 
-    pip install numpy pybullet requests commentjson colorama numpy-stl
+    pip install numpy pybullet requests commentjson colorama numpy-stl transforms3d
 
 You can now use the scripts by running a command like the following in the root folder:
 

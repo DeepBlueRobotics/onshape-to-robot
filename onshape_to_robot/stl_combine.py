@@ -43,7 +43,7 @@ def apply_matrix(mesh, matrix):
 # And going to Filter > Show current filter script
 filter_script_mlx = """<!DOCTYPE FilterScript>
 <FilterScript>
- <filter name="Quadric Edge Collapse Decimation">
+ <filter name="Simplification: Quadric Edge Collapse Decimation">
   <Param type="RichFloat" value="%reduction%" name="TargetPerc"/>
   <Param type="RichFloat" value="0.3" name="QualityThr"/>
   <Param type="RichBool" value="false" name="PreserveBoundary"/>

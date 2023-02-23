@@ -134,15 +134,9 @@ class Client():
             with open(fileName, "rb") as stream:
                 result = stream.read()
         else:
-            cbr = callback()
-            if cbr == None:
-                return None
-            result = cbr.content
-            try:
-                with open(fileName, 'wb') as stream:
-                    stream.write(result)
-            except Exception as e:
-                print(e)
+            result = callback().content
+            with open(fileName, 'wb') as stream:
+                stream.write(result)
         if isString and type(result) == bytes:
             result = result.decode('utf-8')
         return result

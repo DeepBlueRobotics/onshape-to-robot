@@ -192,7 +192,7 @@ Can override the color for parts (should be an array: ``[r, g, b]`` with numbers
 
 *optional*
 
-Prepends a string to the paths of STL files. This is helpful for ROS users as they often need to specify their
+Prepends a string to the paths of mesh files. This is helpful for ROS users as they often need to specify their
 ``robot_description`` package.
 
 ``addDummyBaseLink``
@@ -224,48 +224,47 @@ Specifies a file with XML content that is inserted into the URDF/SDF at the end 
 With this option, visual parts will be added through fixed links to each part of the robot. Mostly, this feature
 is a hack to keep colors properly for rendering in PyBullet (see https://github.com/bulletphysics/bullet3/issues/2650).
 
-``mergeSTLs``
+``mergeMeshes``
 ~~~~~~~~~~~~~
 
 *optional, default: "no"*
 
 Can be "no", "visual", "collision" or "all".
 
-This can be used to merge STLs file of the same ``link`` into one unique STL. It is actually better combined with
-``simplifySTLs``, that can be used to reduce the STL file sizes.
+This can be used to merge mesh of the same ``link`` into one unique mesh. It is actually better combined with
+``simplifyMeshes``, that can be used to reduce the mesh file sizes.
 
-**Note: this will only merge visual for visual, see ``mergeSTLsCollisions``**
+**Note: this will only merge visual for visual, see ``mergeMeshesCollisions``**
 
-``mergeSTLsCollisions``
+``mergeMeshesCollisions``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 *optional, default: false*
 
-STLs used for collisions will also be merged if this flag is ``true``. Note that
+Meshes used for collisions will also be merged if this flag is ``true``. Note that
 
-``simplifySTLs``
+``simplifyMeshes``
 ~~~~~~~~~~~~~~~~
 
 *optional, default: "no"*
 
 Can be "no", "visual", "collision" or "all".
 
-If this is set, the STL files will be reduced (see ``maxSTLSize``). This requires ``meshlab`` tool (``sudo
-apt-get install meshlab``).
+If this is set, the mesh files will be reduced (see ``maxMeshSize``).
 
-``maxSTLSize``
+``maxMeshSize``
 ~~~~~~~~~~~~~~
 
 *optional, default: 3*
 
-This is the maximum size (in ``M``) of STL files before they are reduced by ``simplifySTLs``.
+This is the maximum size (in ``M``) of mesh files before they are reduced by ``simplifyMeshes``.
 
 ``useCollisionsConfigurations``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *optional, default: true*
 
-With this option (enabled by default), the collisions=true configuration will be passed when exporting STL
+With this option (enabled by default), the collisions=true configuration will be passed when exporting
 meshes (and NOT dynamics), in order to retrieve simplified mesh parts from OnShape.
 
 This is a way to approximate your robot with simpler meshes.
@@ -308,12 +307,12 @@ Here is an example of configuration:
         // Masses, com and inertias will be zero (can be used if you import a static
         // field for example)
         "noDynamics": false,
-        // Should the STLs of the same link be merged?
-        "mergeSTLs": "no",
-        // Should we simplify STLs files?
-        "simplifySTLs": "no",
-        // Maximum size (M) of STL files to run simplification (required meshlab)
-        "maxSTLSize": 3,
+        // Should the meshes of the same link be merged?
+        "mergeMeshes": "no",
+        // Should we simplify meshes files?
+        "simplifyMeshes": "no",
+        // Maximum size (M) of mesh files to run simplification
+        "maxMeshSize": 3,
 
         // Those can be used to configure the joint max efforts and velocity, and
         // overriden for specific joints

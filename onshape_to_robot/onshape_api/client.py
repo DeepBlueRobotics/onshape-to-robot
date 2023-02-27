@@ -342,6 +342,32 @@ class Client():
 
         return self.cache_get('part_stl', (did, mid, eid, self.hash_partid(partid), configuration), invoke)
 
+    def part_glb(self, did, mid, eid, partid, configuration = 'default'):
+        if self.useCollisionsConfigurations:
+            configuration_before = configuration
+            parts = configuration.split(';')
+            partIdChanged = False
+            result = ''
+            for k, part in enumerate(parts):
+                kv = part.split('=')
+                if len(kv) == 2:
+                    if kv[0] == 'collisions':
+                        kv[1] = 'true'
+                        partIdChanged = True
+                parts[k] = '='.join(kv)
+            configuration = ';'.join(parts)
+
+            if partIdChanged:
+                partid = self.find_new_partid(did, mid, eid, partid, configuration_before, configuration)
+
+        def invoke():
+            req_headers = {
+                'Accept': 'model/gltf-binary;qs=0.08'
+            }
+            return self._api.request('get', '/api/v5/parts/d/' + did + '/m/' + mid + '/e/' + eid + '/partid/'+escape_slash(partid)+'/gltf', query={'rollbackBarIndex': '-1', 'outputSeparateFaceNodes': 'false', 'outputFaceAppearances': 'true', 'configuration': configuration}, headers=req_headers)
+
+        return self.cache_get('part_glb', (did, mid, eid, self.hash_partid(partid), configuration), invoke)
+
     def part_get_metadata(self, did, mid, eid, partid, configuration = 'default'):
         def invoke():
             return self._api.request('get', '/api/metadata/d/' + did + '/m/' + mid + '/e/' + eid + '/p/'+escape_slash(partid), query={'configuration': configuration})

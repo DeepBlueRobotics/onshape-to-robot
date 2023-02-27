@@ -70,11 +70,11 @@ config['whitelist'] = configGet('whitelist', None, hasDefault=True)
 # Color override
 config['color'] = configGet('color', None, hasDefault=True)
 
-# STLs merge and simplification
-config['mergeSTLs'] = configGet('mergeSTLs', 'no', valuesList=[
+# Mesh merge and simplification
+config['mergeMeshes'] = configGet('mergeMeshes', 'no', valuesList=[
                                 'no', 'visual', 'collision', 'all'])
-config['maxSTLSize'] = configGet('maxSTLSize', 3)
-config['simplifySTLs'] = configGet('simplifySTLs', 'no', valuesList=[
+config['maxMeshSize'] = configGet('maxMeshSize', 3)
+config['simplifyMeshes'] = configGet('simplifyMeshes', 'no', valuesList=[
                                    'no', 'visual', 'collision', 'all'])
 
 # Post-import commands to execute
@@ -133,13 +133,13 @@ if config['useScads']:
         config['useScads'] = False
 
 # Checking that MeshLab is present
-if config['simplifySTLs']:
+if config['simplifyMeshes']:
     print(Style.BRIGHT + '* Checking MeshLab presence...' + Style.RESET_ALL)
     if importlib.util.find_spec('pymeshlab') is None:
-        print(Fore.RED + "PyMeshLab is not installed, disabling STL simplification support" + Style.RESET_ALL)
+        print(Fore.RED + "PyMeshLab is not installed, disabling mesh simplification support" + Style.RESET_ALL)
         print(Fore.BLUE + "TIP: consider installing PyMeshLab:" + Style.RESET_ALL)
         print(Fore.BLUE + "pip install pymeshlab" + Style.RESET_ALL)
-        config['simplifySTLs'] = False
+        config['simplifyMeshes'] = False
 
 # Checking that versionId and workspaceId are not set on same time
 if config['versionId'] != '' and config['workspaceId'] != '':

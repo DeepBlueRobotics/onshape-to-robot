@@ -29,9 +29,9 @@ def main():
         exit()
     robot.drawCollisions = config['drawCollisions']
     robot.jointMaxEffort = config['jointMaxEffort']
-    robot.mergeSTLs = config['mergeSTLs']
-    robot.maxSTLSize = config['maxSTLSize']
-    robot.simplifySTLs = config['simplifySTLs']
+    robot.mergeMeshes = config['mergeMeshes']
+    robot.maxMeshSize = config['maxMeshSize']
+    robot.simplifyMeshes = config['simplifyMeshes']
     robot.jointMaxVelocity = config['jointMaxVelocity']
     robot.noDynamics = config['noDynamics']
     robot.packageName = config['packageName']
@@ -61,7 +61,7 @@ def main():
             print(Fore.YELLOW + 'WARNING: Part '+part['name']+' has no partId'+Style.RESET_ALL)
             return
 
-        # Importing STL file for this part
+        # Importing mesh file for this part
         justPart, prefix = extractPartName(part['name'], part['configuration'])
         prefix = re.sub(r'[^\/0-9a-zA-Z_-]', '_', prefix)
 
@@ -78,28 +78,28 @@ def main():
             occurrence['instance']['name']+extra + Style.RESET_ALL)
 
         if partIsIgnore(justPart):
-            stlFile = None
+            glbFile = None
         else:
-            stlFile = prefix.replace('/', '_')+'.stl'
+            glbFile = prefix.replace('/', '_')+'.glb'
             # shorten the configuration to a maximum number of chars to prevent errors. Necessary for standard parts like screws
             if len(part['configuration']) > 40:
                 shortend_configuration = hashlib.md5(
                     part['configuration'].encode('utf-8')).hexdigest()
             else:
                 shortend_configuration = part['configuration']
-            stl = client.part_studio_stl_m(part['documentId'], part['documentMicroversion'], part['elementId'],
+            glb = client.part_glb(part['documentId'], part['documentMicroversion'], part['elementId'],
                                         part['partId'], shortend_configuration)
-        if stl == None:
-            stlFile = None
+        if glb == None:
+            glbFile = None
         else:
-            with open(config['outputDirectory']+'/'+stlFile, 'wb') as stream:
-                stream.write(stl)
+            with open(config['outputDirectory']+'/'+glbFile, 'wb') as stream:
+                stream.write(glb)
 
-            stlMetadata = prefix.replace('/', '_')+'.part'
-            with open(config['outputDirectory']+'/'+stlMetadata, 'w', encoding="utf-8") as stream:
+            partMetadata = prefix.replace('/', '_')+'.part'
+            with open(config['outputDirectory']+'/'+partMetadata, 'w', encoding="utf-8") as stream:
                 json.dump(part, stream, indent=4, sort_keys=True)
 
-            stlFile = config['outputDirectory']+'/'+stlFile
+            glbFile = config['outputDirectory']+'/'+glbFile
 
         # Import the SCAD files pure shapes
         shapes = None
@@ -167,7 +167,7 @@ def main():
         if robot.relative:
             pose = np.linalg.inv(matrix)*pose
 
-        robot.addPart(pose, stlFile, mass, com, inertia, color, shapes, prefix)
+        robot.addPart(pose, glbFile, mass, com, inertia, color, shapes, prefix)
 
 
     partNames = {}

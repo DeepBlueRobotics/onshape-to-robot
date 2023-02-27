@@ -9,12 +9,12 @@ You will need an Onshape account and Python 3.
 
 .. note::
 
-    You might also need OpenSCAD for pure shape estimation and meshlab for STLs simplification. Those are not
+    You might also need OpenSCAD for pure shape estimation. It is not a
     mandatory requirements but will unlock more features:
 
     .. code-block:: bash
 
-        apt-get install openscad meshlab
+        apt-get install openscad
 
 Installation
 ------------
@@ -41,7 +41,7 @@ Install the dependencies (can be in your python3 virtualenv):
 
 .. code-block:: bash
 
-    pip install numpy pybullet requests commentjson colorama numpy-stl transforms3d
+    pip install numpy pybullet requests commentjson colorama pymeshlab transforms3d
 
 You can now use the scripts by running a command like the following in the root folder:
 

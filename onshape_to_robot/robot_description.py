@@ -2,7 +2,8 @@ import numpy as np
 import os
 import math
 import uuid
-from . import stl_combine
+import pymeshlab
+from colorama import Fore, Back, Style
 
 
 def rotationMatrixToEulerAngles(R):
@@ -49,11 +50,11 @@ class RobotDescription(object):
     def __init__(self, name):
         self.drawCollisions = False
         self.relative = True
-        self.mergeSTLs = 'no'
-        self.mergeSTLsCollisions = False
+        self.mergeMeshes = 'no'
+        self.mergeMeshesCollisions = False
         self.useFixedLinks = False
-        self.simplifySTLs = 'no'
-        self.maxSTLSize = 3
+        self.simplifyMeshes = 'no'
+        self.maxMeshSize = 3
         self.xml = ''
         self.jointMaxEffort = 1
         self.jointMaxVelocity = 10
@@ -63,11 +64,11 @@ class RobotDescription(object):
         self.robotName = name
         self.meshDir = None
 
-    def shouldMergeSTLs(self, node):
-        return self.mergeSTLs == 'all' or self.mergeSTLs == node
+    def shouldMergeMeshes(self, node):
+        return self.mergeMeshes == 'all' or self.mergeMeshes == node
 
-    def shouldSimplifySTLs(self, node):
-        return self.simplifySTLs == 'all' or self.simplifySTLs == node
+    def shouldSimplifyMeshes(self, node):
+        return self.simplifyMeshes == 'all' or self.simplifyMeshes == node
 
     def append(self, str):
         self.xml += str+"\n"
@@ -114,18 +115,12 @@ class RobotDescription(object):
             'inertia': inertia
         })
 
-    def mergeSTL(self, stl, matrix, color, mass, node='visual'):
-        if node == 'visual':
-            self._color += np.array(color) * mass
-            self._color_mass += mass
-
-        m = stl_combine.load_mesh(stl)
-        stl_combine.apply_matrix(m, matrix)
-
+    def mergeGLB(self, glb, matrix, color, mass, node='visual'):
         if self._mesh[node] is None:
-            self._mesh[node] = [m.data]
-        else:
-            self._mesh[node].append(m.data)
+            self._mesh[node] = pymeshlab.MeshSet()
+        self._mesh[node].load_new_mesh(glb)
+        self._mesh[node].compute_color_transfer_vertex_to_face()
+        self._mesh[node].set_matrix(transformmatrix = matrix)
 
     def linkDynamics(self):
         mass = 0
@@ -157,7 +152,7 @@ class RobotURDF(RobotDescription):
         self.append('<robot name="' + self.robotName + '">')
         pass
 
-    def addDummyLink(self, name, visualMatrix=None, visualSTL=None, visualColor=None):
+    def addDummyLink(self, name, visualMatrix=None, visualGLB=None, visualColor=None):
         self.append('<link name="'+name+'">')
         self.append('<inertial>')
         self.append('<origin xyz="0 0 0" rpy="0 0 0" />')
@@ -169,9 +164,8 @@ class RobotURDF(RobotDescription):
         self.append(
             '<inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />')
         self.append('</inertial>')
-        if visualSTL is not None:
-            self.addSTL(visualMatrix, visualSTL, visualColor,
-                        name+"_visual", 'visual')
+        if visualGLB is not None:
+            self.addGLB(visualMatrix, visualGLB, name, 'visual')
         self.append('</link>')
 
     def addDummyBaseLinkMethod(self, name):
@@ -214,13 +208,19 @@ class RobotURDF(RobotDescription):
                 else:
                     color = [0.5, 0.5, 0.5]
 
-                filename = self._link_name+'_'+node+'.stl'
-                mesh = stl_combine.combine_meshes(self._mesh[node])
-                stl_combine.save_mesh(
-                    mesh, self.meshDir+'/'+filename)
-                if self.shouldSimplifySTLs(node):
-                    stl_combine.simplify_stl(self.meshDir+'/'+filename, self.maxSTLSize)
-                self.addSTL(np.identity(4), filename, color, self._link_name, node)
+                filename = self._link_name+'_'+node+'.obj'
+                self._mesh[node].generate_by_merging_visible_meshes(mergevisible=False, mergevertices=False, alsounreferenced=False)
+                objPath = self.meshDir+'/'+filename
+                self._mesh[node].save_current_mesh(objPath, save_vertex_color=False, save_wedge_texcoord=False, save_wedge_normal=False)
+                if self.shouldSimplifyMeshes(node):
+                    size_M = os.path.getsize(objPath)/(1024*1024)
+
+                    if size_M > self.maxMeshSize:
+                        print(Fore.BLUE + '+ '+os.path.basename(objPath) +
+                            (' is %.2f M, running mesh simplification' % size_M))
+                        self._mesh[node].meshing_decimation_quadric_edge_collapse(targetperc=self.maxMeshSize/size_M, optimalplacement=False, planarquadric=True)
+                        self._mesh[node].save_current_mesh(objPath, save_vertex_color=False, save_wedge_texcoord=False, save_wedge_normal=False)
+                self.addGLB(np.identity(4), filename, self._link_name, node)
 
         self.append('<inertial>')
         self.append('<origin xyz="%.20g %.20g %.20g" rpy="0 0 0"/>' %
@@ -253,30 +253,26 @@ class RobotURDF(RobotDescription):
         # Linking it with last link with a fixed link
         self.addFixedJoint(self._link_name, name, matrix, name+'_frame')
 
-    def addSTL(self, matrix, stl, color, name, node='visual'):
+    def addGLB(self, matrix, glb, name, node='visual'):
         self.append('<'+node+'>')
         self.append(origin(matrix))
         self.append('<geometry>')
         self.append('<mesh filename="package://' +
-                    self.packageName.strip("/") + "/" + stl+'"/>')
+                    self.packageName.strip("/") + "/" + glb +'"/>')
         self.append('</geometry>')
-        self.append('<material name="'+name+'_material">')
-        self.append('<color rgba="%.20g %.20g %.20g 1.0"/>' %
-                    (color[0], color[1], color[2]))
-        self.append('</material>')
         self.append('</'+node+'>')
 
-    def addPart(self, matrix, stl, mass, com, inertia, color, shapes=None, name=''):
-        if stl is not None:
+    def addPart(self, matrix, glb, mass, com, inertia, color, shapes=None, name=''):
+        if glb is not None:
             if not self.drawCollisions:
                 if self.useFixedLinks:
                     self._visuals.append(
-                        [matrix, self.packageName + os.path.basename(stl), color])
-                elif self.shouldMergeSTLs('visual'):
-                    self.mergeSTL(stl, matrix, color, mass)
+                        [matrix, self.packageName + os.path.basename(glb), color])
+                elif self.shouldMergeMeshes('visual'):
+                    self.mergeGLB(glb, matrix, color, mass)
                 else:
-                    self.addSTL(
-                        matrix, os.path.basename(stl), color, name, 'visual')
+                    self.addGLB(
+                        matrix, os.path.basename(glb), name, 'visual')
 
             entries = ['collision']
             if self.drawCollisions:
@@ -285,11 +281,11 @@ class RobotURDF(RobotDescription):
 
                 if shapes is None:
                     # We don't have pure shape, we use the mesh
-                    if self.shouldMergeSTLs(entry):
-                        self.mergeSTL(stl, matrix, color, mass, entry)
+                    if self.shouldMergeMeshes(entry):
+                        self.mergeGLB(glb, matrix, color, mass, entry)
                     else:
-                        self.addSTL(matrix, os.path.basename(
-                            stl), color, name, entry)
+                        self.addGLB(matrix, os.path.basename(
+                            glb), name, entry)
                 else:
                     # Inserting pure shapes in the URDF model
                     self.append('<!-- Shapes for '+name+' -->')
@@ -357,7 +353,7 @@ class RobotSDF(RobotDescription):
         self.append('</joint>')
         self.append('')
 
-    def addDummyLink(self, name, visualMatrix=None, visualSTL=None, visualColor=None):
+    def addDummyLink(self, name, visualMatrix=None, visualGLB=None, visualColor=None):
         self.append('<link name="'+name+'">')
         self.append('<pose>0 0 0 0 0 0</pose>')
         self.append('<inertial>')
@@ -368,8 +364,8 @@ class RobotSDF(RobotDescription):
             '<ixx>0</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0</iyy><iyz>0</iyz><izz>0</izz>')
         self.append('</inertia>')
         self.append('</inertial>')
-        if visualSTL is not None:
-            self.addSTL(visualMatrix, visualSTL, visualColor,
+        if visualGLB is not None:
+            self.addGLB(visualMatrix, visualGLB, 
                         name+"_visual", "visual")
         self.append('</link>')
 
@@ -384,15 +380,19 @@ class RobotSDF(RobotDescription):
 
         for node in ['visual', 'collision']:
             if self._mesh[node] is not None:
-                color = self._color / self._color_mass
-                filename = self._link_name+'_'+node+'.stl'
-                mesh = stl_combine.combine_meshes(self._mesh[node])
-                stl_combine.save_mesh(
-                    mesh, self.meshDir+'/'+filename)
-                if self.shouldSimplifySTLs(node):
-                    stl_combine.simplify_stl(
-                        self.meshDir+'/'+filename, self.maxSTLSize)
-                self.addSTL(np.identity(4), filename, color, self._link_name, 'visual')
+                filename = self._link_name+'_'+node+'.obj'
+                self._mesh[node].generate_by_merging_visible_meshes(mergevisible=False, mergevertices=False, alsounreferenced=False)
+                objPath = self.meshDir+'/'+filename
+                self._mesh[node].save_current_mesh(objPath, save_vertex_color=False, save_wedge_texcoord=False, save_wedge_normal=False)
+                if self.shouldSimplifyMeshes(node):
+                    size_M = os.path.getsize(objPath)/(1024*1024)
+
+                    if size_M > self.maxMeshSize:
+                        print(Fore.BLUE + '+ '+os.path.basename(objPath) +
+                            (' is %.2f M, running mesh simplification' % size_M))
+                        self._mesh[node].meshing_decimation_quadric_edge_collapse(targetperc=self.maxMeshSize/size_M, optimalplacement=False, planarquadric=True)
+                        self._mesh[node].save_current_mesh(objPath, save_vertex_color=False, save_wedge_texcoord=False, save_wedge_normal=False)
+                self.addGLB(np.identity(4), filename, self._link_name, 'visual')
 
         self.append('<inertial>')
         self.append('<pose frame="'+self._link_name +
@@ -435,33 +435,31 @@ class RobotSDF(RobotDescription):
 
         return m
 
-    def addSTL(self, matrix, stl, color, name, node='visual'):
+    def addGLB(self, matrix, glb, name, node='visual'):
         self.append('<'+node+' name="'+name+'_visual">')
         self.append(pose(matrix))
         self.append('<geometry>')
-        self.append('<mesh><uri>file://'+stl+'</uri></mesh>')
+        self.append('<mesh><uri>file://'+glb+'</uri></mesh>')
         self.append('</geometry>')
-        if node == 'visual':
-            self.append(self.material(color))
         self.append('</'+node+'>')
 
-    def addPart(self, matrix, stl, mass, com, inertia, color, shapes=None, name=''):
+    def addPart(self, matrix, glb, mass, com, inertia, color, shapes=None, name=''):
         name = self._link_name+'_'+str(self._link_childs)+'_'+name
         self._link_childs += 1
 
         # self.append('<link name="'+name+'">')
         # self.append(pose(matrix))
 
-        if stl is not None:
+        if glb is not None:
             if not self.drawCollisions:
                 if self.useFixedLinks:
                     self._visuals.append(
-                        [matrix, self.packageName + os.path.basename(stl), color])
-                elif self.shouldMergeSTLs('visual'):
-                    self.mergeSTL(stl, matrix, color, mass)
+                        [matrix, self.packageName + os.path.basename(glb), color])
+                elif self.shouldMergeMeshes('visual'):
+                    self.mergeGLB(glb, matrix, color, mass)
                 else:
-                    self.addSTL(matrix, os.path.basename(
-                        stl), color, name, 'visual')
+                    self.addGLB(matrix, os.path.basename(
+                        glb), name, 'visual')
 
             entries = ['collision']
             if self.drawCollisions:
@@ -469,10 +467,10 @@ class RobotSDF(RobotDescription):
             for entry in entries:
                 if shapes is None:
                     # We don't have pure shape, we use the mesh
-                    if self.shouldMergeSTLs(entry):
-                        self.mergeSTL(stl, matrix, color, mass, entry)
+                    if self.shouldMergeMeshes(entry):
+                        self.mergeGLB(glb, matrix, color, mass, entry)
                     else:
-                        self.addSTL(matrix, stl, color, name, entry)
+                        self.addGLB(matrix, glb, name, entry)
                 else:
                     # Inserting pure shapes in the URDF model
                     k = 0
